@@ -1,24 +1,30 @@
 import React, { useState, useEffect, useMemo } from "react";
 
-const BirthdayCountdown = ({ birthMonth, birthDay }) => {
-  // Function to calculate time left until the next birthday
-  const calculateTimeLeft = useMemo(() => {
-    return () => {
-      const now = new Date();
-      let nextBirthday = new Date(now.getFullYear(), birthMonth - 1, birthDay);
+const BirthdayCountdown = () => {
+  const [birthDate, setBirthDate] = useState(""); // Store user input
+  const [timeLeft, setTimeLeft] = useState(null); // Store countdown result
 
-      // ✅ Check if birthday has passed this year → Move to next year
+  // Function to calculate time left
+  const calculateTimeLeft = useMemo(() => {
+    return (birthDate) => {
+      if (!birthDate) return null; // If no date is selected, return null
+
+      const now = new Date();
+      const birth = new Date(birthDate);
+      let nextBirthday = new Date(now.getFullYear(), birth.getMonth(), birth.getDate());
+
+      // ✅ If birthday has already passed this year, move to next year
       if (now > nextBirthday) {
         nextBirthday.setFullYear(now.getFullYear() + 1);
       }
 
       // ✅ Handle Leap Year Edge Case (Feb 29)
       const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-      if (birthMonth === 2 && birthDay === 29 && !isLeapYear(nextBirthday.getFullYear())) {
+      if (birth.getMonth() === 1 && birth.getDate() === 29 && !isLeapYear(nextBirthday.getFullYear())) {
         nextBirthday.setFullYear(nextBirthday.getFullYear() + 1);
       }
 
-      // ✅ Calculate remaining time in milliseconds
+      // ✅ Calculate time difference
       const timeDiff = nextBirthday - now;
 
       return {
@@ -29,28 +35,46 @@ const BirthdayCountdown = ({ birthMonth, birthDay }) => {
         isBirthday: timeDiff <= 0, // ✅ Check if today is the birthday
       };
     };
-  }, [birthMonth, birthDay]);
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  }, []);
 
   useEffect(() => {
+    if (!birthDate) return;
+
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      setTimeLeft(calculateTimeLeft(birthDate));
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [calculateTimeLeft]);
+  }, [birthDate, calculateTimeLeft]);
 
   return (
     <div style={{ textAlign: "center", fontSize: "20px", fontWeight: "bold", marginTop: "20px" }}>
-      <h2>🎉 Birthday Countdown 🎂</h2>
-      {timeLeft.isBirthday ? (
-        <h1 style={{ color: "green" }}>🎊 Happy Birthday! 🎊</h1>
-      ) : (
-        <p>
-          {timeLeft.days} Days, {timeLeft.hours} Hours, {timeLeft.minutes} Minutes,{" "}
-          {timeLeft.seconds} Seconds
-        </p>
+      <h2>🎉 Enter Your Birthday 🎂</h2>
+      
+      {/* User Input Field */}
+      <input
+        type="date"
+        value={birthDate}
+        onChange={(e) => setBirthDate(e.target.value)}
+        style={{
+          padding: "10px",
+          fontSize: "16px",
+          borderRadius: "5px",
+          border: "1px solid gray",
+          marginBottom: "20px"
+        }}
+      />
+
+      {/* Display Countdown */}
+      {timeLeft && (
+        timeLeft.isBirthday ? (
+          <h1 style={{ color: "green" }}>🎊 Happy Birthday! 🎊</h1>
+        ) : (
+          <p>
+            {timeLeft.days} Days, {timeLeft.hours} Hours, {timeLeft.minutes} Minutes,{" "}
+            {timeLeft.seconds} Seconds
+          </p>
+        )
       )}
     </div>
   );
